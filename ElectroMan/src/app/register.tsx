@@ -2,15 +2,15 @@ import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import { Controller, useForm, type Control } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
@@ -52,7 +52,7 @@ function formatBirthdate(value: string) {
   return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
 }
 
-type RegisterTextFieldName = Exclude<keyof RegisterForm, 'termsAccepted'>;
+type RegisterTextFieldName = Exclude<keyof RegisterForm, "termsAccepted">;
 
 function Field({
   control,
@@ -63,7 +63,7 @@ function Field({
   keyboardType,
   onValueChange,
 }: {
-  control: ReturnType<typeof useForm<RegisterForm>>['control'];
+  control: ReturnType<typeof useForm<RegisterForm>>["control"];
   name: RegisterTextFieldName;
   label: string;
   secureTextEntry?: boolean;
@@ -111,7 +111,7 @@ function CheckboxField({
   name,
   label,
 }: {
-  control: ReturnType<typeof useForm<RegisterForm>>['control'];
+  control: ReturnType<typeof useForm<RegisterForm>>["control"];
   name: keyof RegisterForm;
   label: string;
 }) {
@@ -126,10 +126,7 @@ function CheckboxField({
             onPress={() => onChange(!value)}
           >
             <View
-              style={[
-                styles.checkbox,
-                value ? styles.checkboxChecked : null,
-              ]}
+              style={[styles.checkbox, value ? styles.checkboxChecked : null]}
             >
               {value ? <Text style={styles.checkboxMark}>✓</Text> : null}
             </View>

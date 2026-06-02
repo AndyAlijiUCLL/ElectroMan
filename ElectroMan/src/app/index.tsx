@@ -4,13 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
@@ -126,44 +126,46 @@ export default function LoginScreen() {
         <View style={styles.hero} />
         <View style={styles.containerInner}>
           <View style={styles.card}>
-          <Text style={styles.title}>ElectroMan</Text>
-          <Text style={styles.subtitle}>Field worker work-order access</Text>
+            <Text style={styles.title}>ElectroMan</Text>
+            <Text style={styles.subtitle}>Field worker work-order access</Text>
 
-          <Field control={control} name="username" label="Username" />
-          <Field
-            control={control}
-            name="password"
-            label="Password"
-            secureTextEntry
-          />
+            <Field control={control} name="username" label="Username" />
+            <Field
+              control={control}
+              name="password"
+              label="Password"
+              secureTextEntry
+            />
 
-          {statusMessage ? (
-            <Text
-              style={statusIsError ? styles.errorBanner : styles.successBanner}
+            {statusMessage ? (
+              <Text
+                style={
+                  statusIsError ? styles.errorBanner : styles.successBanner
+                }
+              >
+                {statusMessage}
+              </Text>
+            ) : null}
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed ? styles.buttonPressed : null,
+              ]}
+              onPress={onSubmit}
+              disabled={isSubmitting}
             >
-              {statusMessage}
-            </Text>
-          ) : null}
+              <Text style={styles.primaryButtonText}>
+                {isSubmitting ? "Checking..." : "Login"}
+              </Text>
+            </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed ? styles.buttonPressed : null,
-            ]}
-            onPress={onSubmit}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.primaryButtonText}>
-              {isSubmitting ? "Checking..." : "Login"}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.secondaryButton}
-            onPress={() => router.push("./register")}
-          >
-            <Text style={styles.secondaryButtonText}>Create account</Text>
-          </Pressable>
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => router.push("./register")}
+            >
+              <Text style={styles.secondaryButtonText}>Create account</Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>

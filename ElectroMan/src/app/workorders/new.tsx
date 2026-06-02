@@ -4,13 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
@@ -178,7 +178,9 @@ export default function NewWorkOrderScreen() {
 
           <Pressable
             style={styles.secondaryButton}
-            onPress={() => router.replace(`/workorders?userId=${params.userId ?? ""}`)}
+            onPress={() =>
+              router.replace(`/workorders?userId=${params.userId ?? ""}`)
+            }
           >
             <Text style={styles.secondaryButtonText}>Cancel</Text>
           </Pressable>

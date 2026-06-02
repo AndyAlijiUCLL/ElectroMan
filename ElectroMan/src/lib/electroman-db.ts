@@ -1,161 +1,171 @@
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 export type UserRow = {
-	id: number;
-	firstName: string;
-	lastName: string;
-	username: string;
-	password: string;
-	birthdate: string;
-	municipality: string;
-	postalCode: string;
-	street: string;
-	houseNumber: string;
-	box: string;
+  id: number;
+  firstName: string;
+  lastName: string;
+  username: string;
+  password: string;
+  birthdate: string;
+  municipality: string;
+  postalCode: string;
+  street: string;
+  houseNumber: string;
+  box: string;
 };
 
 export type WorkOrderRow = {
-	id: number;
-	city: string;
-	device: string;
-	problemCode: string;
-	customerName: string;
-	processed: number;
-	detailedProblemDescription: string;
-	repairInformation: string;
+  id: number;
+  city: string;
+  device: string;
+  problemCode: string;
+  customerName: string;
+  processed: number;
+  detailedProblemDescription: string;
+  repairInformation: string;
 };
 
-export type UserInput = Omit<UserRow, 'id'>;
-export type WorkOrderInput = Omit<WorkOrderRow, 'id' | 'processed' | 'repairInformation'> & {
-	repairInformation?: string;
-	processed?: boolean;
+export type UserInput = Omit<UserRow, "id">;
+export type WorkOrderInput = Omit<
+  WorkOrderRow,
+  "id" | "processed" | "repairInformation"
+> & {
+  repairInformation?: string;
+  processed?: boolean;
 };
 
-type NativeSQLiteModule = typeof import('expo-sqlite');
-type NativeSQLiteDatabase = Awaited<ReturnType<NativeSQLiteModule['openDatabaseAsync']>>;
+type NativeSQLiteModule = typeof import("expo-sqlite");
+type NativeSQLiteDatabase = Awaited<
+  ReturnType<NativeSQLiteModule["openDatabaseAsync"]>
+>;
 
-const storageKey = 'electroman-web-db';
-const databaseName = 'electroman.db';
+const storageKey = "electroman-web-db";
+const databaseName = "electroman.db";
 
 const defaultUser: UserInput = {
-	firstName: 'Test',
-	lastName: 'Worker',
-	username: 'test',
-	password: 'test',
-	birthdate: '1990-01-01',
-	municipality: 'Ghent',
-	postalCode: '9000',
-	street: 'Main Street',
-	houseNumber: '12',
-	box: 'A',
+  firstName: "Test",
+  lastName: "Worker",
+  username: "test",
+  password: "test",
+  birthdate: "1990-01-01",
+  municipality: "Ghent",
+  postalCode: "9000",
+  street: "Main Street",
+  houseNumber: "12",
+  box: "A",
 };
 
 const defaultWorkOrders: WorkOrderInput[] = [
-	{
-		city: 'Brussels',
-		device: 'Microwave',
-		problemCode: '12',
-		customerName: 'Smith',
-		detailedProblemDescription: 'Microwave shuts off after 30 seconds and smells like burned plastic.',
-	},
-	{
-		city: 'Leuven',
-		device: 'Washing machine',
-		problemCode: '18',
-		customerName: 'De Smet',
-		detailedProblemDescription: 'Machine does not start and shows an intermittent error code on the panel.',
-	},
-	{
-		city: 'Antwerp',
-		device: 'Laptop',
-		problemCode: '07',
-		customerName: 'Van Dijck',
-		detailedProblemDescription: 'Laptop overheats and reboots when the charger is connected.',
-	},
-	{
-		city: 'Ghent',
-		device: 'Television',
-		problemCode: '23',
-		customerName: 'Peeters',
-		detailedProblemDescription: 'Screen flickers and loses sound after a few minutes of use.',
-	},
-	{
-		city: 'Mechelen',
-		device: 'Coffee machine',
-		problemCode: '05',
-		customerName: 'Jacobs',
-		detailedProblemDescription: 'Device leaks water and no longer heats the water properly.',
-	},
+  {
+    city: "Brussels",
+    device: "Microwave",
+    problemCode: "12",
+    customerName: "Smith",
+    detailedProblemDescription:
+      "Microwave shuts off after 30 seconds and smells like burned plastic.",
+  },
+  {
+    city: "Leuven",
+    device: "Washing machine",
+    problemCode: "18",
+    customerName: "De Smet",
+    detailedProblemDescription:
+      "Machine does not start and shows an intermittent error code on the panel.",
+  },
+  {
+    city: "Antwerp",
+    device: "Laptop",
+    problemCode: "07",
+    customerName: "Van Dijck",
+    detailedProblemDescription:
+      "Laptop overheats and reboots when the charger is connected.",
+  },
+  {
+    city: "Ghent",
+    device: "Television",
+    problemCode: "23",
+    customerName: "Peeters",
+    detailedProblemDescription:
+      "Screen flickers and loses sound after a few minutes of use.",
+  },
+  {
+    city: "Mechelen",
+    device: "Coffee machine",
+    problemCode: "05",
+    customerName: "Jacobs",
+    detailedProblemDescription:
+      "Device leaks water and no longer heats the water properly.",
+  },
 ];
 
 let databasePromise: Promise<NativeSQLiteDatabase> | null = null;
 let sqliteModule: NativeSQLiteModule | null = null;
 
 function createSeedState() {
-	return {
-		users: [
-			{
-				...defaultUser,
-				id: 1,
-			},
-		],
-		workOrders: defaultWorkOrders.map((workOrder, index) => ({
-			...workOrder,
-			id: index + 1,
-			processed: 0,
-			repairInformation: '',
-		})),
-	};
+  return {
+    users: [
+      {
+        ...defaultUser,
+        id: 1,
+      },
+    ],
+    workOrders: defaultWorkOrders.map((workOrder, index) => ({
+      ...workOrder,
+      id: index + 1,
+      processed: 0,
+      repairInformation: "",
+    })),
+  };
 }
 
 function readState() {
-	if (typeof window === 'undefined') {
-		return createSeedState();
-	}
+  if (typeof window === "undefined") {
+    return createSeedState();
+  }
 
-	const rawValue = window.localStorage.getItem(storageKey);
-	if (!rawValue) {
-		return createSeedState();
-	}
+  const rawValue = window.localStorage.getItem(storageKey);
+  if (!rawValue) {
+    return createSeedState();
+  }
 
-	try {
-		return JSON.parse(rawValue) as ReturnType<typeof createSeedState>;
-	} catch {
-		return createSeedState();
-	}
+  try {
+    return JSON.parse(rawValue) as ReturnType<typeof createSeedState>;
+  } catch {
+    return createSeedState();
+  }
 }
 
 function writeState(state: ReturnType<typeof createSeedState>) {
-	if (typeof window === 'undefined') {
-		return;
-	}
+  if (typeof window === "undefined") {
+    return;
+  }
 
-	window.localStorage.setItem(storageKey, JSON.stringify(state));
+  window.localStorage.setItem(storageKey, JSON.stringify(state));
 }
 
 async function getNativeSQLiteModule() {
-	if (!sqliteModule) {
-		sqliteModule = await import('expo-sqlite');
-	}
+  if (!sqliteModule) {
+    sqliteModule = await import("expo-sqlite");
+  }
 
-	return sqliteModule;
+  return sqliteModule;
 }
 
 async function getDatabase() {
-	if (Platform.OS === 'web') {
-		return null;
-	}
+  if (Platform.OS === "web") {
+    return null;
+  }
 
-	if (!databasePromise) {
-		const { openDatabaseAsync } = await getNativeSQLiteModule();
-		databasePromise = openDatabaseAsync(databaseName);
-	}
+  if (!databasePromise) {
+    const { openDatabaseAsync } = await getNativeSQLiteModule();
+    databasePromise = openDatabaseAsync(databaseName);
+  }
 
-	return databasePromise;
+  return databasePromise;
 }
 
 async function ensureSchema(db: NativeSQLiteDatabase) {
-	await db.execAsync(`
+  await db.execAsync(`
 		CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			firstName TEXT NOT NULL,
@@ -184,251 +194,279 @@ async function ensureSchema(db: NativeSQLiteDatabase) {
 }
 
 async function seedNativeDatabase(db: NativeSQLiteDatabase) {
-	const existingUser = await db.getFirstAsync<UserRow>(
-		'SELECT * FROM users WHERE username = ? LIMIT 1',
-		[defaultUser.username],
-	);
+  const existingUser = await db.getFirstAsync<UserRow>(
+    "SELECT * FROM users WHERE username = ? LIMIT 1",
+    [defaultUser.username],
+  );
 
-	if (!existingUser) {
-		await db.runAsync(
-			`INSERT INTO users (
+  if (!existingUser) {
+    await db.runAsync(
+      `INSERT INTO users (
 				firstName, lastName, username, password, birthdate, municipality, postalCode, street, houseNumber, box
 			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			[
-				defaultUser.firstName,
-				defaultUser.lastName,
-				defaultUser.username,
-				defaultUser.password,
-				defaultUser.birthdate,
-				defaultUser.municipality,
-				defaultUser.postalCode,
-				defaultUser.street,
-				defaultUser.houseNumber,
-				defaultUser.box,
-			],
-		);
-	}
+      [
+        defaultUser.firstName,
+        defaultUser.lastName,
+        defaultUser.username,
+        defaultUser.password,
+        defaultUser.birthdate,
+        defaultUser.municipality,
+        defaultUser.postalCode,
+        defaultUser.street,
+        defaultUser.houseNumber,
+        defaultUser.box,
+      ],
+    );
+  }
 
-	for (const [index, workOrder] of defaultWorkOrders.entries()) {
-		const id = index + 1;
-		const existingWorkOrder = await db.getFirstAsync<WorkOrderRow>(
-			'SELECT * FROM workOrders WHERE id = ? LIMIT 1',
-			[id],
-		);
+  for (const [index, workOrder] of defaultWorkOrders.entries()) {
+    const id = index + 1;
+    const existingWorkOrder = await db.getFirstAsync<WorkOrderRow>(
+      "SELECT * FROM workOrders WHERE id = ? LIMIT 1",
+      [id],
+    );
 
-		if (!existingWorkOrder) {
-			await db.runAsync(
-				`INSERT INTO workOrders (
+    if (!existingWorkOrder) {
+      await db.runAsync(
+        `INSERT INTO workOrders (
 					id, city, device, problemCode, customerName, processed, detailedProblemDescription, repairInformation
 				) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-				[
-					id,
-					workOrder.city,
-					workOrder.device,
-					workOrder.problemCode,
-					workOrder.customerName,
-					0,
-					workOrder.detailedProblemDescription,
-					workOrder.repairInformation ?? '',
-				],
-			);
-		}
-	}
+        [
+          id,
+          workOrder.city,
+          workOrder.device,
+          workOrder.problemCode,
+          workOrder.customerName,
+          0,
+          workOrder.detailedProblemDescription,
+          workOrder.repairInformation ?? "",
+        ],
+      );
+    }
+  }
 }
 
 export async function initializeDatabase() {
-	if (Platform.OS === 'web') {
-		// Always reset the web fallback storage to a fresh seeded state.
-		console.log('[electroman-db] resetting web storage to seeded state');
-		writeState(createSeedState());
-		return;
-	}
+  if (Platform.OS === "web") {
+    // Always reset the web fallback storage to a fresh seeded state.
+    console.log("[electroman-db] resetting web storage to seeded state");
+    writeState(createSeedState());
+    return;
+  }
 
-	const db = await getDatabase();
-	if (!db) {
-		return;
-	}
+  const db = await getDatabase();
+  if (!db) {
+    return;
+  }
 
-	await ensureSchema(db);
-	// Clear any existing rows to follow assignment: clear DB then seed.
-	console.log('[electroman-db] clearing native tables and seeding');
-	await db.execAsync(`DELETE FROM users; DELETE FROM workOrders;`);
-	await seedNativeDatabase(db);
-	console.log('[electroman-db] seeding complete');
+  await ensureSchema(db);
+  // Clear any existing rows to follow assignment: clear DB then seed.
+  console.log("[electroman-db] clearing native tables and seeding");
+  await db.execAsync(`DELETE FROM users; DELETE FROM workOrders;`);
+  await seedNativeDatabase(db);
+  console.log("[electroman-db] seeding complete");
 }
 
 export async function authenticateUser(username: string, password: string) {
-	await initializeDatabase();
+  await initializeDatabase();
 
-	if (Platform.OS === 'web') {
-		const user = readState().users.find(candidate => candidate.username === username.trim());
-		return user && user.password === password ? user : null;
-	}
+  if (Platform.OS === "web") {
+    const user = readState().users.find(
+      (candidate) => candidate.username === username.trim(),
+    );
+    return user && user.password === password ? user : null;
+  }
 
-	const db = await getDatabase();
-	const user = await db!.getFirstAsync<UserRow>(
-		'SELECT * FROM users WHERE username = ? LIMIT 1',
-		[username.trim()],
-	);
+  const db = await getDatabase();
+  const user = await db!.getFirstAsync<UserRow>(
+    "SELECT * FROM users WHERE username = ? LIMIT 1",
+    [username.trim()],
+  );
 
-	if (!user || user.password !== password) {
-		return null;
-	}
+  if (!user || user.password !== password) {
+    return null;
+  }
 
-	return user;
+  return user;
 }
 
 export async function createLocalUser(input: UserInput) {
-	await initializeDatabase();
+  await initializeDatabase();
 
-	if (Platform.OS === 'web') {
-		const state = readState();
-		if (state.users.some(candidate => candidate.username === input.username.trim())) {
-			throw new Error('A user with that username already exists.');
-		}
+  if (Platform.OS === "web") {
+    const state = readState();
+    if (
+      state.users.some(
+        (candidate) => candidate.username === input.username.trim(),
+      )
+    ) {
+      throw new Error("A user with that username already exists.");
+    }
 
-		const nextId = Math.max(0, ...state.users.map(user => user.id)) + 1;
-		state.users.push({ ...input, id: nextId });
-		writeState(state);
-		return getUserByUsername(input.username);
-	}
+    const nextId = Math.max(0, ...state.users.map((user) => user.id)) + 1;
+    state.users.push({ ...input, id: nextId });
+    writeState(state);
+    return getUserByUsername(input.username);
+  }
 
-	const db = await getDatabase();
-	const existing = await db!.getFirstAsync<UserRow>(
-		'SELECT * FROM users WHERE username = ? LIMIT 1',
-		[input.username.trim()],
-	);
+  const db = await getDatabase();
+  const existing = await db!.getFirstAsync<UserRow>(
+    "SELECT * FROM users WHERE username = ? LIMIT 1",
+    [input.username.trim()],
+  );
 
-	if (existing) {
-		throw new Error('A user with that username already exists.');
-	}
+  if (existing) {
+    throw new Error("A user with that username already exists.");
+  }
 
-	await db!.runAsync(
-		`INSERT INTO users (
+  await db!.runAsync(
+    `INSERT INTO users (
 			firstName, lastName, username, password, birthdate, municipality, postalCode, street, houseNumber, box
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		[
-			input.firstName.trim(),
-			input.lastName.trim(),
-			input.username.trim(),
-			input.password,
-			input.birthdate.trim(),
-			input.municipality.trim(),
-			input.postalCode.trim(),
-			input.street.trim(),
-			input.houseNumber.trim(),
-			input.box.trim(),
-		],
-	);
+    [
+      input.firstName.trim(),
+      input.lastName.trim(),
+      input.username.trim(),
+      input.password,
+      input.birthdate.trim(),
+      input.municipality.trim(),
+      input.postalCode.trim(),
+      input.street.trim(),
+      input.houseNumber.trim(),
+      input.box.trim(),
+    ],
+  );
 
-	return getUserByUsername(input.username);
+  return getUserByUsername(input.username);
 }
 
 export async function getUserById(userId: number) {
-	await initializeDatabase();
+  await initializeDatabase();
 
-	if (Platform.OS === 'web') {
-		return readState().users.find(user => user.id === userId) ?? null;
-	}
+  if (Platform.OS === "web") {
+    return readState().users.find((user) => user.id === userId) ?? null;
+  }
 
-	const db = await getDatabase();
-	return db!.getFirstAsync<UserRow>('SELECT * FROM users WHERE id = ? LIMIT 1', [userId]);
+  const db = await getDatabase();
+  return db!.getFirstAsync<UserRow>(
+    "SELECT * FROM users WHERE id = ? LIMIT 1",
+    [userId],
+  );
 }
 
 export async function getUserByUsername(username: string) {
-	await initializeDatabase();
+  await initializeDatabase();
 
-	if (Platform.OS === 'web') {
-		return readState().users.find(user => user.username === username.trim()) ?? null;
-	}
+  if (Platform.OS === "web") {
+    return (
+      readState().users.find((user) => user.username === username.trim()) ??
+      null
+    );
+  }
 
-	const db = await getDatabase();
-	return db!.getFirstAsync<UserRow>('SELECT * FROM users WHERE username = ? LIMIT 1', [username.trim()]);
+  const db = await getDatabase();
+  return db!.getFirstAsync<UserRow>(
+    "SELECT * FROM users WHERE username = ? LIMIT 1",
+    [username.trim()],
+  );
 }
 
 export async function listWorkOrders() {
-	await initializeDatabase();
+  await initializeDatabase();
 
-	if (Platform.OS === 'web') {
-		return readState().workOrders;
-	}
+  if (Platform.OS === "web") {
+    return readState().workOrders;
+  }
 
-	const db = await getDatabase();
-	return db!.getAllAsync<WorkOrderRow>('SELECT * FROM workOrders ORDER BY id ASC');
+  const db = await getDatabase();
+  return db!.getAllAsync<WorkOrderRow>(
+    "SELECT * FROM workOrders ORDER BY id ASC",
+  );
 }
 
 export async function getWorkOrderById(workOrderId: number) {
-	await initializeDatabase();
+  await initializeDatabase();
 
-	if (Platform.OS === 'web') {
-		return readState().workOrders.find(workOrder => workOrder.id === workOrderId) ?? null;
-	}
+  if (Platform.OS === "web") {
+    return (
+      readState().workOrders.find(
+        (workOrder) => workOrder.id === workOrderId,
+      ) ?? null
+    );
+  }
 
-	const db = await getDatabase();
-	return db!.getFirstAsync<WorkOrderRow>('SELECT * FROM workOrders WHERE id = ? LIMIT 1', [workOrderId]);
+  const db = await getDatabase();
+  return db!.getFirstAsync<WorkOrderRow>(
+    "SELECT * FROM workOrders WHERE id = ? LIMIT 1",
+    [workOrderId],
+  );
 }
 
 export async function createWorkOrder(input: WorkOrderInput) {
-	await initializeDatabase();
+  await initializeDatabase();
 
-	if (Platform.OS === 'web') {
-		const state = readState();
-		const nextId = Math.max(0, ...state.workOrders.map(workOrder => workOrder.id)) + 1;
-		state.workOrders.push({
-			id: nextId,
-			city: input.city.trim(),
-			device: input.device.trim(),
-			problemCode: input.problemCode.trim(),
-			customerName: input.customerName.trim(),
-			processed: input.processed ? 1 : 0,
-			detailedProblemDescription: input.detailedProblemDescription.trim(),
-			repairInformation: input.repairInformation?.trim() ?? '',
-		});
-		writeState(state);
-		return nextId;
-	}
+  if (Platform.OS === "web") {
+    const state = readState();
+    const nextId =
+      Math.max(0, ...state.workOrders.map((workOrder) => workOrder.id)) + 1;
+    state.workOrders.push({
+      id: nextId,
+      city: input.city.trim(),
+      device: input.device.trim(),
+      problemCode: input.problemCode.trim(),
+      customerName: input.customerName.trim(),
+      processed: input.processed ? 1 : 0,
+      detailedProblemDescription: input.detailedProblemDescription.trim(),
+      repairInformation: input.repairInformation?.trim() ?? "",
+    });
+    writeState(state);
+    return nextId;
+  }
 
-	const db = await getDatabase();
-	const result = await db!.runAsync(
-		`INSERT INTO workOrders (
+  const db = await getDatabase();
+  const result = await db!.runAsync(
+    `INSERT INTO workOrders (
 			city, device, problemCode, customerName, processed, detailedProblemDescription, repairInformation
 		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		[
-			input.city.trim(),
-			input.device.trim(),
-			input.problemCode.trim(),
-			input.customerName.trim(),
-			input.processed ? 1 : 0,
-			input.detailedProblemDescription.trim(),
-			input.repairInformation?.trim() ?? '',
-		],
-	);
+    [
+      input.city.trim(),
+      input.device.trim(),
+      input.problemCode.trim(),
+      input.customerName.trim(),
+      input.processed ? 1 : 0,
+      input.detailedProblemDescription.trim(),
+      input.repairInformation?.trim() ?? "",
+    ],
+  );
 
-	return result.lastInsertRowId;
+  return result.lastInsertRowId;
 }
 
-export async function saveRepairInformation(workOrderId: number, repairInformation: string) {
-	await initializeDatabase();
+export async function saveRepairInformation(
+  workOrderId: number,
+  repairInformation: string,
+) {
+  await initializeDatabase();
 
-	if (Platform.OS === 'web') {
-		const state = readState();
-		const workOrder = state.workOrders.find(item => item.id === workOrderId);
+  if (Platform.OS === "web") {
+    const state = readState();
+    const workOrder = state.workOrders.find((item) => item.id === workOrderId);
 
-		if (!workOrder) {
-			throw new Error('Work order not found.');
-		}
+    if (!workOrder) {
+      throw new Error("Work order not found.");
+    }
 
-		workOrder.processed = 1;
-		workOrder.repairInformation = repairInformation.trim();
-		writeState(state);
-		return;
-	}
+    workOrder.processed = 1;
+    workOrder.repairInformation = repairInformation.trim();
+    writeState(state);
+    return;
+  }
 
-	const db = await getDatabase();
-	await db!.runAsync(
-		'UPDATE workOrders SET processed = 1, repairInformation = ? WHERE id = ?',
-		[repairInformation.trim(), workOrderId],
-	);
+  const db = await getDatabase();
+  await db!.runAsync(
+    "UPDATE workOrders SET processed = 1, repairInformation = ? WHERE id = ?",
+    [repairInformation.trim(), workOrderId],
+  );
 }
 export * from "./electroman-db.native";
 
