@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { MD3LightTheme, PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { initializeDatabase } from "../lib/electroman-db";
+import { initDB } from "../../database/db";
 
 const theme = {
   ...MD3LightTheme,
@@ -19,7 +19,7 @@ const theme = {
 
 export default function RootLayout() {
   useEffect(() => {
-    void initializeDatabase();
+    void initDB();
   }, []);
 
   return (

@@ -15,7 +15,7 @@ import {
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
 
-import { createWorkOrder } from "../../lib/electroman-db";
+import { createWorkOrder } from "../../../database/db";
 
 const workOrderSchema = z.object({
   city: z.string().trim().min(1, "City is required"),
@@ -125,9 +125,7 @@ export default function NewWorkOrderScreen() {
       >
         <View style={styles.card}>
           <Text style={styles.title}>New work order</Text>
-          <Text style={styles.subtitle}>
-            Add a work order to the local SQLite database.
-          </Text>
+          <Text style={styles.subtitle}>Add a work order</Text>
 
           <Field
             control={control}

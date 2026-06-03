@@ -15,7 +15,7 @@ import {
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
 
-import { createLocalUser } from "../lib/electroman-db";
+import { createLocalUser } from "../../database/db";
 
 const registerSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required"),

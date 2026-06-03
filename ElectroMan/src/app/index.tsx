@@ -4,18 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
 
-import { authenticateUser } from "../lib/electroman-db";
+import { authenticateUser } from "../../database/db";
 
 const loginSchema = z.object({
   username: z.string().trim().min(1, "Username is required"),

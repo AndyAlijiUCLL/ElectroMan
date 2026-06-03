@@ -1,4 +1,10 @@
+import * as SQLite from "expo-sqlite";
 import { Platform } from "react-native";
+
+type DBState = {
+  users: UserRow[];
+  workOrders: WorkOrderRow[];
+};
 
 export type UserRow = {
   id: number;
@@ -34,13 +40,8 @@ export type WorkOrderInput = Omit<
   processed?: boolean;
 };
 
-type NativeSQLiteModule = typeof import("expo-sqlite");
-type NativeSQLiteDatabase = Awaited<
-  ReturnType<NativeSQLiteModule["openDatabaseAsync"]>
->;
-
-const storageKey = "electroman-web-db";
 const databaseName = "electroman.db";
+const storageKey = "electroman-web-db";
 
 const defaultUser: UserInput = {
   firstName: "Test",
@@ -98,17 +99,11 @@ const defaultWorkOrders: WorkOrderInput[] = [
   },
 ];
 
-let databasePromise: Promise<NativeSQLiteDatabase> | null = null;
-let sqliteModule: NativeSQLiteModule | null = null;
+let sqliteDatabasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-function createSeedState() {
+function createSeedState(): DBState {
   return {
-    users: [
-      {
-        ...defaultUser,
-        id: 1,
-      },
-    ],
+    users: [{ ...defaultUser, id: 1 }],
     workOrders: defaultWorkOrders.map((workOrder, index) => ({
       ...workOrder,
       id: index + 1,
@@ -118,7 +113,7 @@ function createSeedState() {
   };
 }
 
-function readState() {
+function readWebState(): DBState {
   if (typeof window === "undefined") {
     return createSeedState();
   }
@@ -129,13 +124,13 @@ function readState() {
   }
 
   try {
-    return JSON.parse(rawValue) as ReturnType<typeof createSeedState>;
+    return JSON.parse(rawValue) as DBState;
   } catch {
     return createSeedState();
   }
 }
 
-function writeState(state: ReturnType<typeof createSeedState>) {
+function writeWebState(state: DBState) {
   if (typeof window === "undefined") {
     return;
   }
@@ -143,114 +138,95 @@ function writeState(state: ReturnType<typeof createSeedState>) {
   window.localStorage.setItem(storageKey, JSON.stringify(state));
 }
 
-async function getNativeSQLiteModule() {
-  if (!sqliteModule) {
-    sqliteModule = await import("expo-sqlite");
-  }
-
-  return sqliteModule;
-}
-
 async function getDatabase() {
   if (Platform.OS === "web") {
     return null;
   }
 
-  if (!databasePromise) {
-    const { openDatabaseAsync } = await getNativeSQLiteModule();
-    databasePromise = openDatabaseAsync(databaseName);
+  if (!sqliteDatabasePromise) {
+    sqliteDatabasePromise = SQLite.openDatabaseAsync(databaseName).catch(
+      (error) => {
+        sqliteDatabasePromise = null;
+        throw error;
+      },
+    );
   }
 
-  return databasePromise;
+  return sqliteDatabasePromise;
 }
 
-async function ensureSchema(db: NativeSQLiteDatabase) {
+async function createDatabaseSchema(db: SQLite.SQLiteDatabase) {
   await db.execAsync(`
-		CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			firstName TEXT NOT NULL,
-			lastName TEXT NOT NULL,
-			username TEXT NOT NULL UNIQUE,
-			password TEXT NOT NULL,
-			birthdate TEXT NOT NULL,
-			municipality TEXT NOT NULL,
-			postalCode TEXT NOT NULL,
-			street TEXT NOT NULL,
-			houseNumber TEXT NOT NULL,
-			box TEXT NOT NULL DEFAULT ''
-		);
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      firstName TEXT NOT NULL,
+      lastName TEXT NOT NULL,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      birthdate TEXT NOT NULL,
+      municipality TEXT NOT NULL,
+      postalCode TEXT NOT NULL,
+      street TEXT NOT NULL,
+      houseNumber TEXT NOT NULL,
+      box TEXT NOT NULL DEFAULT ''
+    );
+  `);
 
-		CREATE TABLE IF NOT EXISTS workOrders (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			city TEXT NOT NULL,
-			device TEXT NOT NULL,
-			problemCode TEXT NOT NULL,
-			customerName TEXT NOT NULL,
-			processed INTEGER NOT NULL DEFAULT 0,
-			detailedProblemDescription TEXT NOT NULL,
-			repairInformation TEXT NOT NULL DEFAULT ''
-		);
-	`);
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS workOrders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      city TEXT NOT NULL,
+      device TEXT NOT NULL,
+      problemCode TEXT NOT NULL,
+      customerName TEXT NOT NULL,
+      processed INTEGER NOT NULL DEFAULT 0,
+      detailedProblemDescription TEXT NOT NULL,
+      repairInformation TEXT NOT NULL DEFAULT ''
+    );
+  `);
 }
 
-async function seedNativeDatabase(db: NativeSQLiteDatabase) {
-  const existingUser = await db.getFirstAsync<UserRow>(
-    "SELECT * FROM users WHERE username = ? LIMIT 1",
-    [defaultUser.username],
+async function seedNativeDatabase(
+  db: Awaited<ReturnType<typeof import("expo-sqlite").openDatabaseAsync>>,
+) {
+  await db.runAsync(
+    `INSERT INTO users (firstName, lastName, username, password, birthdate, municipality, postalCode, street, houseNumber, box)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    [
+      defaultUser.firstName,
+      defaultUser.lastName,
+      defaultUser.username,
+      defaultUser.password,
+      defaultUser.birthdate,
+      defaultUser.municipality,
+      defaultUser.postalCode,
+      defaultUser.street,
+      defaultUser.houseNumber,
+      defaultUser.box,
+    ],
   );
 
-  if (!existingUser) {
+  for (const [index, workOrder] of defaultWorkOrders.entries()) {
     await db.runAsync(
-      `INSERT INTO users (
-				firstName, lastName, username, password, birthdate, municipality, postalCode, street, houseNumber, box
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO workOrders (id, city, device, problemCode, customerName, processed, detailedProblemDescription, repairInformation)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
       [
-        defaultUser.firstName,
-        defaultUser.lastName,
-        defaultUser.username,
-        defaultUser.password,
-        defaultUser.birthdate,
-        defaultUser.municipality,
-        defaultUser.postalCode,
-        defaultUser.street,
-        defaultUser.houseNumber,
-        defaultUser.box,
+        index + 1,
+        workOrder.city,
+        workOrder.device,
+        workOrder.problemCode,
+        workOrder.customerName,
+        0,
+        workOrder.detailedProblemDescription,
+        workOrder.repairInformation ?? "",
       ],
     );
   }
-
-  for (const [index, workOrder] of defaultWorkOrders.entries()) {
-    const id = index + 1;
-    const existingWorkOrder = await db.getFirstAsync<WorkOrderRow>(
-      "SELECT * FROM workOrders WHERE id = ? LIMIT 1",
-      [id],
-    );
-
-    if (!existingWorkOrder) {
-      await db.runAsync(
-        `INSERT INTO workOrders (
-					id, city, device, problemCode, customerName, processed, detailedProblemDescription, repairInformation
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id,
-          workOrder.city,
-          workOrder.device,
-          workOrder.problemCode,
-          workOrder.customerName,
-          0,
-          workOrder.detailedProblemDescription,
-          workOrder.repairInformation ?? "",
-        ],
-      );
-    }
-  }
 }
 
-export async function initializeDatabase() {
+export async function initDB() {
   if (Platform.OS === "web") {
-    // Always reset the web fallback storage to a fresh seeded state.
-    console.log("[electroman-db] resetting web storage to seeded state");
-    writeState(createSeedState());
+    writeWebState(createSeedState());
     return;
   }
 
@@ -259,26 +235,35 @@ export async function initializeDatabase() {
     return;
   }
 
-  await ensureSchema(db);
-  // Clear any existing rows to follow assignment: clear DB then seed.
-  console.log("[electroman-db] clearing native tables and seeding");
-  await db.execAsync(`DELETE FROM users; DELETE FROM workOrders;`);
-  await seedNativeDatabase(db);
-  console.log("[electroman-db] seeding complete");
+  try {
+    await db.execAsync(`DROP TABLE IF EXISTS workOrders;`);
+    await db.execAsync(`DROP TABLE IF EXISTS users;`);
+    await createDatabaseSchema(db);
+    await seedNativeDatabase(db);
+  } catch (error) {
+    console.warn("Failed to initialize database:", error);
+    sqliteDatabasePromise = null;
+    throw error;
+  }
 }
 
-export async function authenticateUser(username: string, password: string) {
-  await initializeDatabase();
-
+export async function authenticateUser(
+  username: string,
+  password: string,
+): Promise<UserRow | null> {
   if (Platform.OS === "web") {
-    const user = readState().users.find(
+    const user = readWebState().users.find(
       (candidate) => candidate.username === username.trim(),
     );
     return user && user.password === password ? user : null;
   }
 
   const db = await getDatabase();
-  const user = await db!.getFirstAsync<UserRow>(
+  if (!db) {
+    return null;
+  }
+
+  const user = await db.getFirstAsync<UserRow>(
     "SELECT * FROM users WHERE username = ? LIMIT 1",
     [username.trim()],
   );
@@ -291,10 +276,8 @@ export async function authenticateUser(username: string, password: string) {
 }
 
 export async function createLocalUser(input: UserInput) {
-  await initializeDatabase();
-
   if (Platform.OS === "web") {
-    const state = readState();
+    const state = readWebState();
     if (
       state.users.some(
         (candidate) => candidate.username === input.username.trim(),
@@ -305,12 +288,16 @@ export async function createLocalUser(input: UserInput) {
 
     const nextId = Math.max(0, ...state.users.map((user) => user.id)) + 1;
     state.users.push({ ...input, id: nextId });
-    writeState(state);
+    writeWebState(state);
     return getUserByUsername(input.username);
   }
 
   const db = await getDatabase();
-  const existing = await db!.getFirstAsync<UserRow>(
+  if (!db) {
+    throw new Error("Database unavailable.");
+  }
+
+  const existing = await db.getFirstAsync<UserRow>(
     "SELECT * FROM users WHERE username = ? LIMIT 1",
     [input.username.trim()],
   );
@@ -319,10 +306,9 @@ export async function createLocalUser(input: UserInput) {
     throw new Error("A user with that username already exists.");
   }
 
-  await db!.runAsync(
-    `INSERT INTO users (
-			firstName, lastName, username, password, birthdate, municipality, postalCode, street, houseNumber, box
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  await db.runAsync(
+    `INSERT INTO users (firstName, lastName, username, password, birthdate, municipality, postalCode, street, houseNumber, box)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       input.firstName.trim(),
       input.lastName.trim(),
@@ -341,72 +327,77 @@ export async function createLocalUser(input: UserInput) {
 }
 
 export async function getUserById(userId: number) {
-  await initializeDatabase();
-
   if (Platform.OS === "web") {
-    return readState().users.find((user) => user.id === userId) ?? null;
+    return readWebState().users.find((user) => user.id === userId) ?? null;
   }
 
   const db = await getDatabase();
-  return db!.getFirstAsync<UserRow>(
-    "SELECT * FROM users WHERE id = ? LIMIT 1",
-    [userId],
-  );
+  if (!db) {
+    return null;
+  }
+
+  return db.getFirstAsync<UserRow>("SELECT * FROM users WHERE id = ? LIMIT 1", [
+    userId,
+  ]);
 }
 
 export async function getUserByUsername(username: string) {
-  await initializeDatabase();
-
   if (Platform.OS === "web") {
     return (
-      readState().users.find((user) => user.username === username.trim()) ??
+      readWebState().users.find((user) => user.username === username.trim()) ??
       null
     );
   }
 
   const db = await getDatabase();
-  return db!.getFirstAsync<UserRow>(
+  if (!db) {
+    return null;
+  }
+
+  return db.getFirstAsync<UserRow>(
     "SELECT * FROM users WHERE username = ? LIMIT 1",
     [username.trim()],
   );
 }
 
 export async function listWorkOrders() {
-  await initializeDatabase();
-
   if (Platform.OS === "web") {
-    return readState().workOrders;
+    return readWebState().workOrders;
   }
 
   const db = await getDatabase();
-  return db!.getAllAsync<WorkOrderRow>(
+  if (!db) {
+    return [];
+  }
+
+  return db.getAllAsync<WorkOrderRow>(
     "SELECT * FROM workOrders ORDER BY id ASC",
   );
 }
 
 export async function getWorkOrderById(workOrderId: number) {
-  await initializeDatabase();
-
   if (Platform.OS === "web") {
     return (
-      readState().workOrders.find(
+      readWebState().workOrders.find(
         (workOrder) => workOrder.id === workOrderId,
       ) ?? null
     );
   }
 
   const db = await getDatabase();
-  return db!.getFirstAsync<WorkOrderRow>(
+  if (!db) {
+    return null;
+  }
+
+  return db.getFirstAsync<WorkOrderRow>(
     "SELECT * FROM workOrders WHERE id = ? LIMIT 1",
     [workOrderId],
   );
 }
 
 export async function createWorkOrder(input: WorkOrderInput) {
-  await initializeDatabase();
-
   if (Platform.OS === "web") {
-    const state = readState();
+    const state = readWebState();
     const nextId =
       Math.max(0, ...state.workOrders.map((workOrder) => workOrder.id)) + 1;
     state.workOrders.push({
@@ -419,15 +410,18 @@ export async function createWorkOrder(input: WorkOrderInput) {
       detailedProblemDescription: input.detailedProblemDescription.trim(),
       repairInformation: input.repairInformation?.trim() ?? "",
     });
-    writeState(state);
+    writeWebState(state);
     return nextId;
   }
 
   const db = await getDatabase();
-  const result = await db!.runAsync(
-    `INSERT INTO workOrders (
-			city, device, problemCode, customerName, processed, detailedProblemDescription, repairInformation
-		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  if (!db) {
+    throw new Error("Database unavailable.");
+  }
+
+  const result = await db.runAsync(
+    `INSERT INTO workOrders (city, device, problemCode, customerName, processed, detailedProblemDescription, repairInformation)
+      VALUES (?, ?, ?, ?, ?, ?, ?);`,
     [
       input.city.trim(),
       input.device.trim(),
@@ -446,27 +440,49 @@ export async function saveRepairInformation(
   workOrderId: number,
   repairInformation: string,
 ) {
-  await initializeDatabase();
-
   if (Platform.OS === "web") {
-    const state = readState();
+    const state = readWebState();
     const workOrder = state.workOrders.find((item) => item.id === workOrderId);
-
     if (!workOrder) {
       throw new Error("Work order not found.");
     }
 
     workOrder.processed = 1;
     workOrder.repairInformation = repairInformation.trim();
-    writeState(state);
+    writeWebState(state);
     return;
   }
 
   const db = await getDatabase();
-  await db!.runAsync(
-    "UPDATE workOrders SET processed = 1, repairInformation = ? WHERE id = ?",
+  if (!db) {
+    throw new Error("Database unavailable.");
+  }
+
+  await db.runAsync(
+    "UPDATE workOrders SET processed = 1, repairInformation = ? WHERE id = ?;",
     [repairInformation.trim(), workOrderId],
   );
 }
-export * from "./electroman-db.native";
 
+export async function reopenWorkOrder(workOrderId: number) {
+  if (Platform.OS === "web") {
+    const state = readWebState();
+    const workOrder = state.workOrders.find((item) => item.id === workOrderId);
+    if (!workOrder) {
+      throw new Error("Work order not found.");
+    }
+
+    workOrder.processed = 0;
+    writeWebState(state);
+    return;
+  }
+
+  const db = await getDatabase();
+  if (!db) {
+    throw new Error("Database unavailable.");
+  }
+
+  await db.runAsync("UPDATE workOrders SET processed = 0 WHERE id = ?;", [
+    workOrderId,
+  ]);
+}

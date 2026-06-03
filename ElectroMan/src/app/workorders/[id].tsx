@@ -2,19 +2,20 @@ import { useEffect, useState } from "react";
 
 import { router, useLocalSearchParams } from "expo-router";
 import {
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 import {
-    getWorkOrderById,
-    saveRepairInformation,
-    type WorkOrderRow,
-} from "../../lib/electroman-db";
+  getWorkOrderById,
+  reopenWorkOrder,
+  saveRepairInformation,
+  type WorkOrderRow,
+} from "../../../database/db";
 
 export default function WorkOrderDetailScreen() {
   const params = useLocalSearchParams<{ id?: string; userId?: string }>();
@@ -69,6 +70,15 @@ export default function WorkOrderDetailScreen() {
     router.replace(`/workorders?userId=${params.userId ?? ""}`);
   };
 
+  const onReopen = async () => {
+    await reopenWorkOrder(workOrderId);
+    setWorkOrder((current) =>
+      current ? { ...current, processed: 0 } : current,
+    );
+    setStatusIsError(false);
+    setStatusMessage("Work order reopened. You can now edit repair details.");
+  };
+
   const onCancel = () => {
     router.replace(`/workorders?userId=${params.userId ?? ""}`);
   };
@@ -80,8 +90,13 @@ export default function WorkOrderDetailScreen() {
           <Text style={styles.toolbarAction}>Cancel</Text>
         </Pressable>
         <Text style={styles.toolbarTitle}>Detail</Text>
-        <Pressable onPress={onSave}>
-          <Text style={styles.toolbarAction}>Save</Text>
+        <Pressable
+          onPress={workOrder?.processed ? onReopen : onSave}
+          disabled={workOrder?.processed !== 1 && !repairInformation.trim()}
+        >
+          <Text style={styles.toolbarAction}>
+            {workOrder?.processed ? "Re-open" : "Save"}
+          </Text>
         </Pressable>
       </View>
 
