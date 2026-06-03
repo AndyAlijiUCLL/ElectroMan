@@ -2,19 +2,19 @@ import { useEffect, useState } from "react";
 
 import { router, useLocalSearchParams } from "expo-router";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 
 import {
-  getWorkOrderById,
-  reopenWorkOrder,
-  saveRepairInformation,
-  type WorkOrderRow,
+    getWorkOrderById,
+    reopenWorkOrder,
+    saveRepairInformation,
+    type WorkOrderRow,
 } from "../../../database/db";
 
 export default function WorkOrderDetailScreen() {
