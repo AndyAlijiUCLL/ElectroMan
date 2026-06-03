@@ -4,28 +4,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
 
-import { createWorkOrder } from "../../../database/db";
+
+import { addWorkorder } from "../../../database/db";
 
 const workOrderSchema = z.object({
   city: z.string().trim().min(1, "City is required"),
   device: z.string().trim().min(1, "Device is required"),
   problemCode: z.string().trim().min(1, "Problem code is required"),
   customerName: z.string().trim().min(1, "Name is required"),
-  detailedProblemDescription: z
-    .string()
-    .trim()
-    .min(1, "Problem description is required"),
+  detailedProblemDescription: z.string().trim().optional(),
 });
 
 type WorkOrderForm = z.infer<typeof workOrderSchema>;
@@ -41,6 +39,8 @@ function Field({
   label: string;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
 }) {
+  // This helper renders a single form field with a label and error text.
+  // Controller wraps the native input and connects it to react-hook-form.
   return (
     <Controller
       control={control}
@@ -69,6 +69,8 @@ function Field({
             }
             placeholder={label}
           />
+          {/* PaperTextInput is from react-native-paper, a UI library for RN.
+              This is not a web <input> or <textarea>. */}
           {error ? <Text style={styles.errorText}>{error.message}</Text> : null}
         </View>
       )}
@@ -97,9 +99,17 @@ export default function NewWorkOrderScreen() {
   });
 
   const onSubmit = handleSubmit(async (values) => {
+    // handleSubmit validates the form before calling this handler.
+    // If the form is invalid, react-hook-form prevents submission.
     try {
       setStatusMessage("");
-      await createWorkOrder(values);
+      await addWorkorder(
+        values.city,
+        values.device,
+        values.problemCode,
+        values.customerName,
+        values.detailedProblemDescription,
+      );
       router.replace(`/workorders?userId=${params.userId ?? ""}`);
     } catch (error) {
       setStatusIsError(true);

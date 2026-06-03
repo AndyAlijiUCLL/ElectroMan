@@ -96,6 +96,7 @@ export default function LoginScreen() {
 
     const user = await authenticateUser(values.username, values.password);
 
+    // Demo login: test / test is created in initDB().
     if (!user) {
       setStatusIsError(true);
       setStatusMessage("Username/password incorrect!");
@@ -106,6 +107,7 @@ export default function LoginScreen() {
     setStatusMessage(
       "Login successful. The main screen will open in a few seconds.",
     );
+    // Short delay before navigation so the user sees the success message.
     timerRef.current = setTimeout(() => {
       router.replace(`./workorders?userId=${String(user.id)}`);
     }, 3000);

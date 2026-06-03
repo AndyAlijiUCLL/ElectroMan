@@ -2,25 +2,26 @@ import { useEffect, useState } from "react";
 
 import { router, useLocalSearchParams } from "expo-router";
 import {
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 import {
-    getWorkOrderById,
-    reopenWorkOrder,
-    saveRepairInformation,
-    type WorkOrderRow,
+  getWorkorderById,
+  reopenWorkorder,
+  saveRepairInfo,
+  type Workorder,
 } from "../../../database/db";
 
 export default function WorkOrderDetailScreen() {
   const params = useLocalSearchParams<{ id?: string; userId?: string }>();
   const workOrderId = Number(params.id);
-  const [workOrder, setWorkOrder] = useState<WorkOrderRow | null>(null);
+  // workOrder = row from DB; repairInformation = local state for the editable text field.
+  const [workOrder, setWorkOrder] = useState<Workorder | null>(null);
   const [repairInformation, setRepairInformation] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [statusIsError, setStatusIsError] = useState(false);
@@ -35,7 +36,7 @@ export default function WorkOrderDetailScreen() {
         return;
       }
 
-      const result = await getWorkOrderById(workOrderId);
+      const result = await getWorkorderById(workOrderId);
 
       if (!active) {
         return;
@@ -48,7 +49,7 @@ export default function WorkOrderDetailScreen() {
       }
 
       setWorkOrder(result);
-      setRepairInformation(result.repairInformation);
+      setRepairInformation(result.repairInformation ?? "");
       setStatusMessage("");
     }
 
@@ -59,19 +60,23 @@ export default function WorkOrderDetailScreen() {
     };
   }, [workOrderId]);
 
+  // Save writes repair text and sets processed = true in db.ts.
   const onSave = async () => {
-    // Allow saving empty repair information (clearing the field)
-    setStatusIsError(false);
-    setStatusMessage("");
+    if (!repairInformation.trim()) {
+      setStatusIsError(true);
+      setStatusMessage("Not saved. No repair information was entered!");
+      return;
+    }
 
-    await saveRepairInformation(workOrderId, repairInformation);
+    await saveRepairInfo(workOrderId, repairInformation);
     router.replace(`/workorders?userId=${params.userId ?? ""}`);
   };
 
+  // Re-open clears processed so the repair field becomes editable again.
   const onReopen = async () => {
-    await reopenWorkOrder(workOrderId);
-    setWorkOrder((current) =>
-      current ? { ...current, processed: 0 } : current,
+    await reopenWorkorder(workOrderId);
+    setWorkOrder((current: Workorder | null) =>
+      current ? { ...current, processed: false } : current,
     );
     setStatusIsError(false);
     setStatusMessage("Work order reopened. You can now edit repair details.");
@@ -105,6 +110,7 @@ export default function WorkOrderDetailScreen() {
         </Text>
 
         <Text style={styles.sectionTitle}>Repair information:</Text>
+        {/* UI switches between edit mode and read-only mode based on processed */}
         {workOrder?.processed ? (
           <View style={styles.readonlyBox}>
             <Text style={styles.bodyText}>

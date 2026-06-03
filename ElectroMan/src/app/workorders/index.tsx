@@ -2,28 +2,39 @@ import { useEffect, useMemo, useState } from "react";
 
 import { router, useLocalSearchParams } from "expo-router";
 import {
-    FlatList,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
 } from "react-native";
 
 import {
-    getUserById,
-    listWorkOrders,
-    type UserRow,
-    type WorkOrderRow,
+  getUserById,
+  getWorkorders,
+  type User,
+  type Workorder,
 } from "../../../database/db";
 
+// flex shares horizontal space; processed keeps a fixed width for the checkbox column.
+const columns = {
+  city: { flex: 1.15, minWidth: 56 },
+  device: { flex: 1, minWidth: 52 },
+  problem: { flex: 0.65, minWidth: 44 },
+  name: { flex: 1.35, minWidth: 64 },
+  processed: { width: 72 },
+} as const;
+
 export default function WorkOrdersScreen() {
+  // userId is passed from login: /workorders?userId=1
   const params = useLocalSearchParams<{ userId?: string }>();
   const userId = Number(params.userId);
-  const [user, setUser] = useState<UserRow | null>(null);
-  const [workOrders, setWorkOrders] = useState<WorkOrderRow[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [workOrders, setWorkOrders] = useState<Workorder[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load data when the screen opens; "active" avoids setState after unmount.
   useEffect(() => {
     let active = true;
 
@@ -31,14 +42,14 @@ export default function WorkOrdersScreen() {
       setLoading(true);
       const [userResult, workOrderResult] = await Promise.all([
         Number.isFinite(userId) ? getUserById(userId) : Promise.resolve(null),
-        listWorkOrders(),
+        getWorkorders(),
       ]);
 
       if (!active) {
         return;
       }
 
-      setUser(userResult);
+      setUser(userResult ?? null);
       setWorkOrders(workOrderResult);
       setLoading(false);
     }
@@ -50,8 +61,9 @@ export default function WorkOrdersScreen() {
     };
   }, [userId]);
 
+  // useMemo recalculates only when workOrders changes (performance + clarity).
   const processedCount = useMemo(
-    () => workOrders.filter((workOrder) => workOrder.processed === 1).length,
+    () => workOrders.filter((workOrder) => workOrder.processed).length,
     [workOrders],
   );
 
@@ -72,37 +84,37 @@ export default function WorkOrdersScreen() {
         </View>
       </View>
 
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryHeading}>
-          Welcome {user ? `${user.firstName} ${user.lastName}` : "worker"}
-        </Text>
-        <Text style={styles.summaryText}>
-          {loading
-            ? "Loading work orders..."
-            : `${workOrders.length} work orders available, ${processedCount} already processed.`}
-        </Text>
-      </View>
-
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tableWrapper}
+        style={styles.contentScroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       >
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryHeading}>
+            Welcome {user ? `${user.firstName} ${user.lastName}` : "worker"}
+          </Text>
+          <Text style={styles.summaryText}>
+            {loading
+              ? "Loading work orders..."
+              : `${workOrders.length} work orders available, ${processedCount} already processed.`}
+          </Text>
+        </View>
+
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <HeaderCell text="City" width={80} />
-            <HeaderCell text="Device" width={90} />
-            <HeaderCell text="Problem" width={60} />
-            <HeaderCell text="Name" width={80} />
-            <HeaderCell text="Processed" width={60} />
+            <HeaderCell text="City" style={columns.city} />
+            <HeaderCell text="Device" style={columns.device} />
+            <HeaderCell text="Problem" style={columns.problem} />
+            <HeaderCell text="Name" style={columns.name} />
+            <HeaderCell text="Processed" style={columns.processed} />
           </View>
 
-          <FlatList
-            data={workOrders}
-            keyExtractor={(item) => String(item.id)}
-            scrollEnabled={false}
-            renderItem={({ item, index }) => (
+          {workOrders.length === 0 ? (
+            <Text style={styles.emptyText}>No work orders found.</Text>
+          ) : (
+            workOrders.map((item, index) => (
               <Pressable
+                key={String(item.id)}
                 style={[
                   styles.tableRow,
                   index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd,
@@ -111,11 +123,11 @@ export default function WorkOrdersScreen() {
                   router.push(`/workorders/${item.id}?userId=${String(userId)}`)
                 }
               >
-                <Cell text={item.city} width={80} />
-                <Cell text={item.device} width={90} />
-                <Cell text={item.problemCode} width={60} />
-                <Cell text={item.customerName} width={80} />
-                <View style={[styles.processedCell, { width: 60 }]}>
+                <Cell text={item.city ?? ""} style={columns.city} />
+                <Cell text={item.device ?? ""} style={columns.device} />
+                <Cell text={item.problemCode ?? ""} style={columns.problem} />
+                <Cell text={item.customerName ?? ""} style={columns.name} />
+                <View style={[styles.processedCell, columns.processed]}>
                   <View
                     style={[
                       styles.checkbox,
@@ -128,31 +140,26 @@ export default function WorkOrdersScreen() {
                   </View>
                 </View>
               </Pressable>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No work orders found.</Text>
-            }
-          />
+            ))
+          )}
         </View>
       </ScrollView>
     </View>
   );
 }
 
-function HeaderCell({ text, width }: { text: string; width: number }) {
+function HeaderCell({ text, style }: { text: string; style: ViewStyle }) {
   return (
-    <View style={[styles.headerCell, { width }]}>
+    <View style={[styles.headerCell, style]}>
       <Text style={styles.headerText}>{text}</Text>
     </View>
   );
 }
 
-function Cell({ text, width }: { text: string; width: number }) {
+function Cell({ text, style }: { text: string; style: ViewStyle }) {
   return (
-    <View style={[styles.cell, { width }]}>
-      <Text style={styles.cellText} numberOfLines={1}>
-        {text}
-      </Text>
+    <View style={[styles.cell, style]}>
+      <Text style={styles.cellText}>{text}</Text>
     </View>
   );
 }
@@ -171,11 +178,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
   },
-  toolbarTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#111827",
-  },
   toolbarActions: {
     flexDirection: "row",
     gap: 16,
@@ -183,6 +185,12 @@ const styles = StyleSheet.create({
   toolbarActionText: {
     color: "#0f766e",
     fontWeight: "700",
+  },
+  contentScroll: {
+    flex: 1,
+  },
+  content: {
+    paddingBottom: 24,
   },
   summaryCard: {
     backgroundColor: "#fff",
@@ -205,31 +213,30 @@ const styles = StyleSheet.create({
     marginTop: 6,
     color: "#475569",
   },
-  tableWrapper: {
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-  },
   table: {
-    width: "100%",
+    marginHorizontal: 12,
     borderWidth: 1,
     borderColor: "#cbd5e1",
     borderRadius: 16,
     overflow: "hidden",
     backgroundColor: "#fff",
+    alignSelf: "stretch",
   },
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#e2e8f0",
   },
   headerCell: {
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderRightWidth: 1,
     borderRightColor: "#cbd5e1",
+    justifyContent: "center",
   },
   headerText: {
     fontWeight: "700",
     color: "#334155",
+    fontSize: 13,
   },
   tableRow: {
     flexDirection: "row",
@@ -243,19 +250,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
   },
   cell: {
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderRightWidth: 1,
     borderRightColor: "#e2e8f0",
     justifyContent: "center",
   },
   cellText: {
     color: "#111827",
+    fontSize: 14,
   },
   processedCell: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: 10,
+    flexShrink: 0,
   },
   checkbox: {
     width: 22,

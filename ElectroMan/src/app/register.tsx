@@ -15,12 +15,16 @@ import {
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
 
-import { createLocalUser } from "../../database/db";
+import { createUser } from "../../database/db";
 
 const registerSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required"),
   lastName: z.string().trim().min(1, "Last name is required"),
-  birthdate: z.string().trim().min(1, "Birthdate is required"),
+  birthdate: z
+    .string()
+    .trim()
+    .min(1, "Birthdate is required")
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use format YYYY-MM-DD"),
   municipality: z.string().trim().min(1, "Municipality is required"),
   postalCode: z.string().trim().min(1, "Postal code is required"),
   street: z.string().trim().min(1, "Street is required"),
@@ -38,6 +42,7 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
+// Strip non-digits and insert dashes while typing: 19981225 → 1998-12-25
 function formatBirthdate(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
 
@@ -164,10 +169,22 @@ export default function RegisterScreen() {
     },
   });
 
+  // postalCode in the form maps to postalcode column name in SQLite.
   const onSubmit = handleSubmit(async (values: RegisterForm) => {
     try {
       setStatusMessage("");
-      await createLocalUser(values);
+      await createUser(
+        values.firstName,
+        values.lastName,
+        values.username,
+        values.password,
+        values.birthdate,
+        values.municipality,
+        values.postalCode,
+        values.street,
+        values.houseNumber,
+        values.box,
+      );
       setStatusIsError(false);
       setStatusMessage("Account created. Returning to login...");
       setTimeout(() => {
