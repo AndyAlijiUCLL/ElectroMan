@@ -198,7 +198,7 @@ export default function RegisterScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Create account</Text>
           <Text style={styles.subtitle}>
-            Add a local ElectroMan user on this device.
+            register youself on ElectroMan to manage your work orders
           </Text>
 
           <View style={styles.gridRow}>
@@ -307,7 +307,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f7fb",
+    backgroundColor: "#ffffff",
   },
   content: {
     flexGrow: 1,
@@ -317,14 +317,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#ffffff",
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: 8,
+    padding: 16,
     gap: 8,
-    shadowColor: "#0f172a",
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
   },
   title: {
     fontSize: 28,
@@ -379,8 +374,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   checkboxChecked: {
-    backgroundColor: "#0f766e",
-    borderColor: "#0f766e",
+    backgroundColor: "#111827",
+    borderColor: "#111827",
   },
   checkboxMark: {
     color: "#fff",
@@ -392,9 +387,9 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   primaryButton: {
-    backgroundColor: "#0f766e",
-    paddingVertical: 14,
-    borderRadius: 14,
+    backgroundColor: "#111827",
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: "center",
     marginTop: 8,
   },
@@ -411,8 +406,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   linkText: {
-    color: "#0f766e",
-    fontWeight: "700",
+    color: "#111827",
+    fontWeight: "600",
   },
   errorBanner: {
     color: "#b91c1c",

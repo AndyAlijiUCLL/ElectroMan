@@ -60,11 +60,9 @@ export default function WorkOrderDetailScreen() {
   }, [workOrderId]);
 
   const onSave = async () => {
-    if (!repairInformation.trim()) {
-      setStatusIsError(true);
-      setStatusMessage("Not saved. No repair information was entered!");
-      return;
-    }
+    // Allow saving empty repair information (clearing the field)
+    setStatusIsError(false);
+    setStatusMessage("");
 
     await saveRepairInformation(workOrderId, repairInformation);
     router.replace(`/workorders?userId=${params.userId ?? ""}`);
@@ -92,7 +90,7 @@ export default function WorkOrderDetailScreen() {
         <Text style={styles.toolbarTitle}>Detail</Text>
         <Pressable
           onPress={workOrder?.processed ? onReopen : onSave}
-          disabled={workOrder?.processed !== 1 && !repairInformation.trim()}
+          disabled={!workOrder}
         >
           <Text style={styles.toolbarAction}>
             {workOrder?.processed ? "Re-open" : "Save"}
@@ -147,10 +145,10 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   toolbar: {
-    paddingHorizontal: 16,
-    paddingTop: 54,
-    paddingBottom: 14,
-    backgroundColor: "#e5e7eb",
+    paddingHorizontal: 12,
+    paddingTop: 40,
+    paddingBottom: 10,
+    backgroundColor: "#f3f4f6",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -161,19 +159,14 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
   toolbarAction: {
-    color: "#0f766e",
-    fontWeight: "700",
+    color: "#111827",
+    fontWeight: "600",
   },
   card: {
     backgroundColor: "#fff",
-    margin: 16,
-    padding: 16,
-    borderRadius: 20,
-    shadowColor: "#0f172a",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 3,
+    margin: 12,
+    padding: 12,
+    borderRadius: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -188,19 +181,19 @@ const styles = StyleSheet.create({
   },
   textArea: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 14,
-    padding: 14,
-    minHeight: 160,
+    borderColor: "#e5e7eb",
+    borderRadius: 6,
+    padding: 12,
+    minHeight: 140,
     color: "#0f172a",
     backgroundColor: "#fff",
   },
   readonlyBox: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: "#f8fafc",
+    borderColor: "#f1f5f9",
+    borderRadius: 6,
+    padding: 12,
+    backgroundColor: "#fafafa",
   },
   errorBanner: {
     color: "#b91c1c",

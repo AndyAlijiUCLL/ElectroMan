@@ -59,7 +59,7 @@ function Field({
             autoCapitalize={autoCapitalize}
             mode="outlined"
             outlineColor="#cbd5e1"
-            activeOutlineColor="#0f766e"
+            activeOutlineColor="#111827"
             style={styles.input}
             contentStyle={styles.inputContent}
             dense={label !== "Detailed problem description"}
@@ -191,7 +191,7 @@ export default function NewWorkOrderScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#ffffff",
   },
   content: {
     flexGrow: 1,
@@ -201,13 +201,8 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 20,
-    shadowColor: "#0f172a",
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
+    borderRadius: 8,
+    padding: 16,
   },
   title: {
     fontSize: 28,
@@ -240,11 +235,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   primaryButton: {
-    backgroundColor: "#0f766e",
-    paddingVertical: 14,
-    borderRadius: 14,
+    backgroundColor: "#111827",
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: "center",
-    marginTop: 6,
+    marginTop: 8,
   },
   primaryButtonText: {
     color: "#fff",
@@ -256,8 +251,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   secondaryButtonText: {
-    color: "#0f766e",
-    fontWeight: "700",
+    color: "#111827",
+    fontWeight: "600",
   },
   buttonPressed: {
     opacity: 0.85,

@@ -4,13 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
 import { z } from "zod";
@@ -127,7 +127,7 @@ export default function LoginScreen() {
         <View style={styles.containerInner}>
           <View style={styles.card}>
             <Text style={styles.title}>ElectroMan</Text>
-            <Text style={styles.subtitle}>Field worker work-order access</Text>
+            <Text style={styles.subtitle}>Get access to your work orders</Text>
 
             <Field control={control} name="username" label="Username" />
             <Field
@@ -176,33 +176,28 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: "#ffffff",
   },
   content: {
     flexGrow: 1,
   },
   hero: {
-    height: 180,
-    backgroundColor: "#0f766e",
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
+    height: 80,
+    backgroundColor: "#f3f4f6",
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
   },
   containerInner: {
     flexGrow: 1,
-    marginTop: -90,
+    marginTop: -40,
     paddingHorizontal: 20,
     justifyContent: "center",
     paddingBottom: 24,
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 28,
-    padding: 20,
-    shadowColor: "#0f172a",
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 5,
+    borderRadius: 8,
+    padding: 16,
   },
   title: {
     fontSize: 32,
@@ -235,11 +230,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   primaryButton: {
-    backgroundColor: "#0f766e",
-    paddingVertical: 14,
-    borderRadius: 14,
+    backgroundColor: "#111827",
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: "center",
-    marginTop: 6,
+    marginTop: 8,
   },
   primaryButtonText: {
     color: "#fff",
@@ -252,8 +247,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   secondaryButtonText: {
-    color: "#0f766e",
-    fontWeight: "700",
+    color: "#111827",
+    fontWeight: "600",
   },
   buttonPressed: {
     opacity: 0.85,
